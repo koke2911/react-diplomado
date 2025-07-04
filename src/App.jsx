@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Home from './pages/Home';
 import TrackDetail from './components/TrackDetail';
 import { MusicProvider } from './context/MusicContext';
+import Favorites from './pages/Favorites';
 
 function App() {
   const [selectedTrack, setSelectedTrack] = useState(null);
@@ -13,8 +14,12 @@ function App() {
       ) : (
         <Home onSelectTrack={setSelectedTrack} />
       )}
+    
     </MusicProvider>
   );
 }
+
+
+
 
 export default App;
