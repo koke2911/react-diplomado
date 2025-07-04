@@ -14,3 +14,7 @@ La aplicación está construida con Vite y React, enfocándose en una experienci
     Node.js v22 como entorno de desarrollo
 
 Este repositorio representa las primeras etapas del proyecto, con vistas a evolucionar en funcionalidades, autenticación, consumo de API y más!!!
+
+Install tailwindcss
+
+npm install -D @tailwindcss/postcss
