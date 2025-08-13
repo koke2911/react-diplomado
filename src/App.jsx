@@ -12,26 +12,63 @@ function AppContent() {
   const [trackList, setTrackList] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [userInteracted, setUserInteracted] = useState(false); // flag de interacción
 
   const audioRef = useRef(null);
+
+  // Función para reproducir audio, solo autoplay si hubo interacción del usuario
+  const playAudio = () => {
+    if (!audioRef.current) return;
+    audioRef.current.pause();
+    audioRef.current.load();
+    if (userInteracted) {
+      audioRef.current.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+    }
+  };
 
   const handleSelectTrack = (track, index, list) => {
     setSelectedTrack(track);
     setTrackList(list || []);
     setCurrentIndex(index);
 
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.load();
-      if (isPlaying) {
-        audioRef.current.play();
-      }
+    setCurrentTime(0);
+    setDuration(0);
+
+    playAudio();
+  };
+
+  const goToPrevious = () => {
+    if (currentIndex > 0) {
+      const newIndex = currentIndex - 1;
+      setSelectedTrack(trackList[newIndex]);
+      setCurrentIndex(newIndex);
+
+      setCurrentTime(0);
+      setDuration(0);
+
+      playAudio();
+    }
+  };
+
+  const goToNext = () => {
+    if (currentIndex < trackList.length - 1) {
+      const newIndex = currentIndex + 1;
+      setSelectedTrack(trackList[newIndex]);
+      setCurrentIndex(newIndex);
+
+      setCurrentTime(0);
+      setDuration(0);
+
+      playAudio();
     }
   };
 
   const togglePlayPause = () => {
     if (!audioRef.current) return;
+
+    if (!userInteracted) setUserInteracted(true); // primera interacción del usuario
 
     if (isPlaying) {
       audioRef.current.pause();
@@ -41,34 +78,11 @@ function AppContent() {
     setIsPlaying(!isPlaying);
   };
 
-  const goToPrevious = () => {
-    if (currentIndex > 0) {
-      const newIndex = currentIndex - 1;
-      const prevTrack = trackList[newIndex];
-      setSelectedTrack(prevTrack);
-      setCurrentIndex(newIndex);
-
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.load();
-        if (isPlaying) audioRef.current.play();
-      }
-    }
-  };
-
-  const goToNext = () => {
-    if (currentIndex < trackList.length - 1) {
-      const newIndex = currentIndex + 1;
-      const nextTrack = trackList[newIndex];
-      setSelectedTrack(nextTrack);
-      setCurrentIndex(newIndex);
-
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.load();
-        if (isPlaying) audioRef.current.play();
-      }
-    }
+  const formatTime = (seconds) => {
+    if (!seconds) return '0:00';
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
 
   useEffect(() => {
@@ -77,15 +91,21 @@ function AppContent() {
 
     const handlePlay = () => setIsPlaying(true);
     const handlePause = () => setIsPlaying(false);
+    const updateTime = () => setCurrentTime(audio.currentTime);
+    const updateDuration = () => setDuration(audio.duration);
 
     audio.addEventListener('play', handlePlay);
     audio.addEventListener('pause', handlePause);
+    audio.addEventListener('timeupdate', updateTime);
+    audio.addEventListener('loadedmetadata', updateDuration);
 
     return () => {
       audio.removeEventListener('play', handlePlay);
       audio.removeEventListener('pause', handlePause);
+      audio.removeEventListener('timeupdate', updateTime);
+      audio.removeEventListener('loadedmetadata', updateDuration);
     };
-  }, []);
+  }, [selectedTrack]);
 
   return (
     <div className="app-wrapper">
@@ -98,53 +118,55 @@ function AppContent() {
                   💚 Ver Favoritos
                 </button>
               </div>
-              <Home
-                onSelectTrack={(track, index, list) =>
-                  handleSelectTrack(track, index, list)
-                }
-              />
+              <Home onSelectTrack={handleSelectTrack} />
             </>
           ) : (
             <Favorites
               onBack={() => setShowFavorites(false)}
-              onSelectTrack={(track, index) =>
-                handleSelectTrack(track, index, favorites)
-              }
+              onSelectTrack={(track, index) => handleSelectTrack(track, index, favorites)}
             />
           )}
         </div>
 
         <div className={`track-detail-wrapper ${selectedTrack ? 'visible' : 'hidden'}`}>
-          {selectedTrack && (
-            <TrackDetail track={selectedTrack} onBack={() => setSelectedTrack(null)} />
-          )}
+          {selectedTrack && <TrackDetail track={selectedTrack} onBack={() => setSelectedTrack(null)} />}
         </div>
       </div>
 
       {selectedTrack && (
         <div className="bottom-player-bar">
-          <audio
-            ref={audioRef}
-            src={selectedTrack.preview}
-            controls
-            className="visible-audio-player"
-          />
+          <audio ref={audioRef} src={selectedTrack.preview} />
+
+          <div className="custom-progress-bar">
+            <span>{formatTime(currentTime)}</span>
+            <input
+              type="range"
+              min="0"
+              max={duration || 0}
+              value={currentTime}
+              onChange={(e) => {
+                const newTime = Number(e.target.value);
+                audioRef.current.currentTime = newTime;
+                setCurrentTime(newTime);
+              }}
+            />
+            <span>{formatTime(duration)}</span>
+          <button className="player-button" onClick={() => toggleFavorite(selectedTrack)}>
+            {favorites.some((f) => f.id === selectedTrack.id) ? '💚' : '🤍'}
+          </button>
+          </div>
 
           <div className="player-buttons">
             <button className="spotify-button" onClick={goToPrevious}>
               <FaArrowLeft />
             </button>
-
-            {/* <button className="spotify-button" onClick={togglePlayPause}>
+            <button className="spotify-button" onClick={togglePlayPause}>
               {isPlaying ? <FaPause /> : <FaPlay />}
-            </button> */}
-
+            </button>
             <button className="spotify-button" onClick={goToNext}>
               <FaArrowRight />
             </button>
-            <button className="player-button" onClick={() => toggleFavorite(selectedTrack)}>
-              {favorites.some((f) => f.id === selectedTrack.id) ? '💚' : '🤍'}
-            </button>
+          
           </div>
         </div>
       )}
