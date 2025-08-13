@@ -14,7 +14,12 @@ function Home({ onSelectTrack }) {
   useEffect(() => {
     if (!query) return;
 
-    const url = `https://thingproxy.freeboard.io/fetch/https://api.deezer.com/search?q=${encodeURIComponent(query)}&index=${indice}`;
+//    const url = `https://thingproxy.freeboard.io/fetch/https://api.deezer.com/search?q=${encodeURIComponent(query)}&index=${indice}`;
+    //const url = `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://api.deezer.com/search?q=${query}&index=${indice}`)}`;
+//    const url = `https://api.deezer.com/search?q=${encodeURIComponent(query)}&index=${indice}`;
+    const url = `/deezer/search?q=${encodeURIComponent(query)}&index=${indice}`;
+
+
 
     fetch(url)
       .then((res) => res.json())
