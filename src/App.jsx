@@ -1,40 +1,163 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState, useRef, useEffect } from 'react';
+import Home from './pages/Home';
+import TrackDetail from './components/TrackDetail';
+import Favorites from './pages/Favorites';
+import { MusicProvider, useMusic } from './context/MusicContext';
+import { FaArrowLeft, FaArrowRight, FaPlay, FaPause } from 'react-icons/fa';
 
-function App() {
-  const [count, setCount] = useState(0)
+function AppContent() {
+  const [selectedTrack, setSelectedTrack] = useState(null);
+  const [showFavorites, setShowFavorites] = useState(false);
+  const { favorites, toggleFavorite } = useMusic();
+  const [trackList, setTrackList] = useState([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  
+
+  const audioRef = useRef(null);
+
+  const handleSelectTrack = (track, index, list) => {
+    setSelectedTrack(track);
+    setTrackList(list || []);
+    setCurrentIndex(index);
+
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.load();
+      if (isPlaying) {
+        audioRef.current.play();
+      }
+    }
+  };
+
+  const togglePlayPause = () => {
+    if (!audioRef.current) return;
+
+    if (isPlaying) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play();
+    }
+    setIsPlaying(!isPlaying);
+  };
+
+  const goToPrevious = () => {
+    if (currentIndex > 0) {
+      const newIndex = currentIndex - 1;
+      const prevTrack = trackList[newIndex];
+      setSelectedTrack(prevTrack);
+      setCurrentIndex(newIndex);
+
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.load();
+        if (isPlaying) audioRef.current.play();
+      }
+    }
+  };
+
+  const goToNext = () => {
+    if (currentIndex < trackList.length - 1) {
+      const newIndex = currentIndex + 1;
+      const nextTrack = trackList[newIndex];
+      setSelectedTrack(nextTrack);
+      setCurrentIndex(newIndex);
+
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.load();
+        if (isPlaying) audioRef.current.play();
+      }
+    }
+  };
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handlePlay = () => setIsPlaying(true);
+    const handlePause = () => setIsPlaying(false);
+
+    audio.addEventListener('play', handlePlay);
+    audio.addEventListener('pause', handlePause);
+
+    return () => {
+      audio.removeEventListener('play', handlePlay);
+      audio.removeEventListener('pause', handlePause);
+    };
+  }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-800 via-indigo-600 to-blue-500 flex flex-col items-center justify-center text-white p-10 space-y-10">
-      <div className="flex gap-10 animate-bounce">
-        <img src={viteLogo} className="h-20 hover:scale-125 transition-transform duration-300" alt="Vite" />
-        <img src={reactLogo} className="h-20 hover:rotate-180 transition-transform duration-500" alt="React" />
+    <div className="app-wrapper">
+      <div className={`main-layout ${selectedTrack ? 'track-selected' : ''}`}>
+        <div className="home-container">
+          {!showFavorites ? (
+            <>
+              <div>
+                <button className="boton" onClick={() => setShowFavorites(true)}>
+                  💚 Ver Favoritos
+                </button>
+              </div>
+              <Home
+                onSelectTrack={(track, index, list) =>
+                  handleSelectTrack(track, index, list)
+                }
+              />
+            </>
+          ) : (
+            <Favorites
+              onBack={() => setShowFavorites(false)}
+              onSelectTrack={(track, index) =>
+                handleSelectTrack(track, index, favorites)
+              }
+            />
+          )}
+        </div>
+
+        <div className={`track-detail-wrapper ${selectedTrack ? 'visible' : 'hidden'}`}>
+          {selectedTrack && (
+            <TrackDetail track={selectedTrack} onBack={() => setSelectedTrack(null)} />
+          )}
+        </div>
       </div>
 
-      <h1 className="text-6xl font-black uppercase tracking-widest text-yellow-300 drop-shadow-lg">
-        Tailwind Activo 🔥
-      </h1>
+      {selectedTrack && (
+        <div className="bottom-player-bar">
+          <audio
+            ref={audioRef}
+            src={selectedTrack.preview}
+            controls
+            className="visible-audio-player"
+          />
 
-      <div className="bg-white text-gray-800 rounded-3xl shadow-2xl border-4 border-pink-400 p-8 w-full max-w-lg space-y-6 text-center">
-        <p className="text-xl font-semibold">¡Contador mágico!</p>
-        <button
-          onClick={() => setCount(count + 1)}
-          className="bg-pink-600 text-white px-8 py-3 text-lg rounded-full hover:bg-pink-400 transition-all duration-300 shadow-md hover:scale-105"
-        >
-          Count is {count}
-        </button>
-        <p className="text-sm">
-          Edita <code className="bg-gray-200 p-1 rounded">src/App.jsx</code> y guarda para probar HMR
-        </p>
-      </div>
+          <div className="player-buttons">
+            <button className="spotify-button" onClick={goToPrevious}>
+              <FaArrowLeft />
+            </button>
 
-      <footer className="text-sm text-white opacity-70 pt-6">
-        Click en los logos para aprender más ✨
-      </footer>
+            <button className="spotify-button" onClick={togglePlayPause}>
+              {isPlaying ? <FaPause /> : <FaPlay />}
+            </button>
+
+            <button className="spotify-button" onClick={goToNext}>
+              <FaArrowRight />
+            </button>
+            <button className="player-button" onClick={() => toggleFavorite(selectedTrack)}>
+              {favorites.some((f) => f.id === selectedTrack.id) ? '💚' : '🤍'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
-  )
+  );
 }
 
-export default App
+function App() {
+  return (
+    <MusicProvider>
+      <AppContent />
+    </MusicProvider>
+  );
+}
+
+export default App;
