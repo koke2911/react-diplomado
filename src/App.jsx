@@ -135,9 +135,9 @@ function AppContent() {
               <FaArrowLeft />
             </button>
 
-            <button className="spotify-button" onClick={togglePlayPause}>
+            {/* <button className="spotify-button" onClick={togglePlayPause}>
               {isPlaying ? <FaPause /> : <FaPlay />}
-            </button>
+            </button> */}
 
             <button className="spotify-button" onClick={goToNext}>
               <FaArrowRight />
