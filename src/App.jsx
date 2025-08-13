@@ -36,6 +36,7 @@ function AppContent() {
     setCurrentTime(0);
     setDuration(0);
 
+    setIsPlaying(false); // <--- reinicia el botón a play
     playAudio();
   };
 
