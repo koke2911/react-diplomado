@@ -5,10 +5,10 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/deezer': {
+      '/api/deezer': {
         target: 'https://api.deezer.com',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/deezer/, ''),
+        rewrite: (path) => path.replace(/^\/api\/deezer/, '/search'),
         secure: true,
       },
     },
