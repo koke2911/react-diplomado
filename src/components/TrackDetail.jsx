@@ -6,8 +6,7 @@ function TrackDetail({ track, onBack }) {
         <img src={track.album.cover_big} alt={track.title} className="detail-cover" />
         <h2>{track.title}</h2>
         <p>🎤 {track.artist.name}</p>
-        <audio controls src={track.preview} autoPlay className="detail-audio" />
-        <p className="disclaimer">🎧 Esta demo solo permite escuchar 30 segundos por canción</p>
+        Esta demo solo reproduce 30seg.
       </div>
     </div>
   );
